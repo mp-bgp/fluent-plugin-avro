@@ -20,9 +20,11 @@ module Fluent
         if not ((@schema_json.nil? ? 0 : 1) + (@schema_file.nil? ? 0 : 1) + (@schema_url.nil? ? 0 : 1) == 1) then
           raise Fluent::ConfigError, 'schema_json, schema_file, or schema_url is required, but not multiple!'
         end
+=begin
         if ((@schema_id.nil? ? 0 : 1) == 0) then
           raise Fluent::ConfigError, 'schema_id is required!'
         end
+=end
         if (@schema_json.nil? && !@schema_file.nil?) then
           @schema_json = File.read(@schema_file)
         end
@@ -36,9 +38,11 @@ module Fluent
       def format(tag, time, record)
         buffer = StringIO.new
         encoder = Avro::IO::BinaryEncoder.new(buffer)
-        encoder.write(MAGIC_BYTE)
-        schema_id = @schema_id
-        encoder.write([schema_id].pack("N"))
+        if ((@schema_id.nil? ? 0 : 1) == 0) then  #  If schema_id is set, write magic byte + schema_ID
+          encoder.write(MAGIC_BYTE)
+          schema_id = @schema_id
+          encoder.write([schema_id].pack("N"))
+        end
         begin
           @writer.write(record, encoder)
         rescue => e
