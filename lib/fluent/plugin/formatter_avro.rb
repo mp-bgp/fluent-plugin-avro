@@ -13,21 +13,21 @@ module Fluent
       config_param :schema_json, :string, :default => nil
       config_param :schema_url, :string, :default => nil
       config_param :schema_url_key, :string, :default => nil
-	  config_param :schema_id, :integer, :default => nil
+      config_param :schema_id, :integer, :default => nil
 
       def configure(conf)
         super
         if not ((@schema_json.nil? ? 0 : 1) + (@schema_file.nil? ? 0 : 1) + (@schema_url.nil? ? 0 : 1) == 1) then
           raise Fluent::ConfigError, 'schema_json, schema_file, or schema_url is required, but not multiple!'
         end
-			if ((@schema_id.nil? ? 0 : 1) == 0) then
-		 raise Fluent::ConfigError, 'schema_id is required!'
-		end
+        if ((@schema_id.nil? ? 0 : 1) == 0) then
+          raise Fluent::ConfigError, 'schema_id is required!'
+        end
         if (@schema_json.nil? && !@schema_file.nil?) then
           @schema_json = File.read(@schema_file)
         end
         if (@schema_json.nil? && !@schema_url.nil?) then
-          @schema_json = fetch_schema(@schema_url,@schema_url_key)
+          @schema_json = fetch_schema(@schema_url, @schema_url_key)
         end
         @schema = Avro::Schema.parse(@schema_json)
         @writer = Avro::IO::DatumWriter.new(@schema)
@@ -35,17 +35,17 @@ module Fluent
 
       def format(tag, time, record)
         buffer = StringIO.new
-        encoder = Avro::IO::BinaryEncoder.new(buffer)	
-		encoder.write(MAGIC_BYTE)
-	    schema_id = @schema_id
-	    encoder.write([schema_id].pack("N"))	
+        encoder = Avro::IO::BinaryEncoder.new(buffer)
+        encoder.write(MAGIC_BYTE)
+        schema_id = @schema_id
+        encoder.write([schema_id].pack("N"))
         begin
           @writer.write(record, encoder)
         rescue => e
           raise e if schema_url.nil?
           schema_changed = false
           begin
-            new_schema_json = fetch_schema(@schema_url,@schema_url_key)
+            new_schema_json = fetch_schema(@schema_url, @schema_url_key)
             new_schema = Avro::Schema.parse(new_schema_json)
             schema_changed = (new_schema_json == @schema_json)
             @schema_json = new_schema_json
@@ -68,7 +68,7 @@ module Fluent
         response.body
       end
 
-      def fetch_schema(url,schema_key)
+      def fetch_schema(url, schema_key)
         response_body = fetch_url(url)
         if schema_key.nil? then
           return response_body
